@@ -16,13 +16,9 @@ This serves as a foundation for high-level autonomous driving, and through vario
   <table>
     <tr align="center">
       <th>Top View</th>
-      <th>1st View</th>
-      <th>3rd View</th>
     </tr>
     <tr align="center">
       <td><video src="https://github.com/user-attachments/assets/90455b22-743b-4ca3-b16e-e83f7d980f85"/></td>
-      <td><video src=""/></td>
-      <td><video src=""/></td>
     </tr>
   </table>
 </div>
