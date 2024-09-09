@@ -20,9 +20,9 @@ This serves as a foundation for high-level autonomous driving, and through vario
       <th>3rd View</th>
     </tr>
     <tr align="center">
-      <td><video src="https://github.com/kuper0201/RL_Self_Driving/assets/17348056/aec4244f-75d3-4ccb-b98f-77c416c95398"/></td>
-      <td><video src="https://github.com/kuper0201/RL_Self_Driving/assets/17348056/47ed6aa7-58a9-4555-9fd9-533e07aa1019"/></td>
-      <td><video src="https://github.com/kuper0201/RL_Self_Driving/assets/17348056/47ed6aa7-58a9-4555-9fd9-533e07aa1019"/></td>
+      <td><video src="https://github.com/user-attachments/assets/90455b22-743b-4ca3-b16e-e83f7d980f85"/></td>
+      <td><video src=""/></td>
+      <td><video src=""/></td>
     </tr>
   </table>
 </div>
