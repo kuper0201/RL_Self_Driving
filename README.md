@@ -40,5 +40,5 @@ This serves as a foundation for high-level autonomous driving, and through vario
 ## To do
 
 - Troubleshooting a car that won't drive straight and oscillates side to side.
-- Interact with other cars, traffic lights.
+- Interact with other cars, traffic lights and more.
 - Route planning.
