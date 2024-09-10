@@ -6,7 +6,6 @@ import os
 from random import choice
 import numpy as np
 from gymnasium import spaces
-from PIL import Image
 
 class CarlaLaneTrackingEnv(gymnasium.Env):
     def __init__(self):
@@ -24,40 +23,46 @@ class CarlaLaneTrackingEnv(gymnasium.Env):
         
         self.spectator = self.world.get_spectator()
         
-        # Setup vehicle and sensors
+        # Setup blueprints
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('vehicle')[0]
-        self.sensor_bp = self.world.get_blueprint_library().find('sensor.camera.semantic_segmentation')
-        #self.sensor_bp = self.blueprint_library.find('sensor.camera.rgb')
         
+        # ImageBuffer
+        self.image_buffer = queue.Queue(maxsize=1)
+
+        self.vehicle = None
+        self.sensor = None
+        self.col_sensor = None
+
         # Get spawn points
         self.spawn_points = self.world.get_map().get_spawn_points()
         #self.spawn_idx_lst = [35, 38, 25, 54]
         self.spawn_idx_lst = [38]
         #self.spawn_idx_lst = [i for i in range(len(self.world.get_map().get_spawn_points()) - 1)]
         self.spawn_point = self.spawn_points[self.spawn_idx_lst[0]]
-        self.vehicle = None
-        self.sensor = None
-        self.col_sensor = None
 
         # Setup action spaces and observation spaces
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
         self.observation_space = spaces.Box(low=0, high=255, shape=(160, 320, 3), dtype=np.uint8)
 
         # Setup states
-        self.current_state = None
         self.done = False
         self.collide = False
         
-        # ImageBuffer
-        self.image_buffer = queue.Queue(maxsize=1)
-        
-    def _setup_collision_sensor(self):
+    def _setup_sensors(self):
+        # Collision Sensor
         collision_bp = self.blueprint_library.find('sensor.other.collision')
-        collision_sensor = self.world.spawn_actor(collision_bp, carla.Transform(), attach_to=self.vehicle)
-        collision_sensor.listen(self._on_collision)
+        self.col_sensor = self.world.spawn_actor(collision_bp, carla.Transform(), attach_to=self.vehicle)
+        self.col_sensor.listen(self._on_collision)
 
-        return collision_sensor
+        # Segmentation Camera
+        cam_bp = self.blueprint_library.find('sensor.camera.semantic_segmentation')
+        cam_bp.set_attribute('image_size_x', '320')
+        cam_bp.set_attribute('image_size_y', '160')
+        
+        cam_transform = carla.Transform(carla.Location(x=2.4, z=1.5), carla.Rotation(pitch=-10))
+        self.sensor = self.world.spawn_actor(cam_bp, cam_transform, attach_to=self.vehicle)
+        self.sensor.listen(self.image_buffer.put)
         
     def _on_collision(self, event):
         self.collide = True
@@ -66,41 +71,24 @@ class CarlaLaneTrackingEnv(gymnasium.Env):
         pass
         
     def spect(self):
+        transform = self.vehicle.get_transform()
+
         # For Training(Top View)
         '''
-        vehicle_transform = self.vehicle.get_transform()
+        spectator_transform = carla.Transform(transform.location + carla.Location(z=50), carla.Rotation(pitch=-90))
+        '''
+        
+        # For Testing1 (1st View)
+        offset = carla.Location(x=0.5, z=1.7)
+        new_transform = carla.Transform(transform.location + transform.get_forward_vector() * offset.x + carla.Location(z=offset.z), transform.rotation)
+        
+        # For Testing2 (3rd View)
+        '''
+        offset = carla.Location(x=-3.5, z=7)
+        new_transform = carla.Transform(transform.location + transform.get_forward_vector() * offset.x + carla.Location(z=offset.z), carla.Rotation(pitch=-40, yaw=transform.rotation.yaw))
+        '''
 
-        spectator_transform = carla.Transform(
-            vehicle_transform.location + carla.Location(z=50),  # 차량 뒤쪽과 위쪽
-            carla.Rotation(pitch=-90)  # 차량과 동일한 회전 각도
-        )
-        
-        self.spectator.set_transform(spectator_transform)
-        '''
-        
-        # For Testing(1st View)
-        
-        transform = self.vehicle.get_transform()
-        first_person_offset = carla.Location(x=0.5, z=1.7)  # 차량 앞쪽과 약간 위쪽으로 오프셋
-        first_person_transform = carla.Transform(
-            transform.location + transform.get_forward_vector() * first_person_offset.x + carla.Location(z=first_person_offset.z),
-            transform.rotation
-        )
-        
-        self.spectator.set_transform(first_person_transform)
-        
-        
-        # For Testing2(3rd View)
-        '''
-        transform = self.vehicle.get_transform()
-        third_person_offset = carla.Location(x=-3.5, z=7)  # 차량의 뒤쪽(x는 음수), 위쪽(z는 양수)으로 오프셋
-        third_person_transform = carla.Transform(
-            transform.location + transform.get_forward_vector() * third_person_offset.x + carla.Location(z=third_person_offset.z),
-            carla.Rotation(pitch=-40, yaw=transform.rotation.yaw)
-        )
-    
-        self.spectator.set_transform(third_person_transform)
-        '''
+        self.spectator.set_transform(new_transform)
 
     def reset(self, seed=0):
         self.collide = False
@@ -108,19 +96,13 @@ class CarlaLaneTrackingEnv(gymnasium.Env):
         
         #self.spawn_point = self.spawn_points[choice(self.spawn_idx_lst)]
         self.spawn_point = self.spawn_points[self.spawn_idx_lst[self.spawn_idx % len(self.spawn_idx_lst)]]
-    
+
+        # Delete all instance
         self.close()
 
+        # Respawn vehicle and sensors
         self.vehicle = self.world.spawn_actor(self.vehicle_bp, self.spawn_point)
-        
-        self.sensor_bp.set_attribute('image_size_x', '320')
-        self.sensor_bp.set_attribute('image_size_y', '160')
-        
-        camera_transform = carla.Transform(carla.Location(x=2.4, z=1.5), carla.Rotation(pitch=-10))
-        self.sensor = self.world.spawn_actor(self.sensor_bp, camera_transform, attach_to=self.vehicle)
-        self.sensor.listen(self.image_buffer.put)
-        
-        self.col_sensor = self._setup_collision_sensor()
+        self._setup_collision_sensor()
 
         self.spect()
         
@@ -130,8 +112,11 @@ class CarlaLaneTrackingEnv(gymnasium.Env):
         self.timestep += 1
         if self.timestep % (4096 * 4) == 0:
             self.spawn_idx += 1
-            
+        
+        # For training(do not fix throttle)
         #self.vehicle.apply_control(carla.VehicleControl(throttle=float(action[0]), steer=float(action[1])))
+
+        # For testing(fixed throttle)
         self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(action[1])))
 
         # Compute reward and state
@@ -140,18 +125,6 @@ class CarlaLaneTrackingEnv(gymnasium.Env):
         self.spect()
         
         return self._process_image(), reward, self.done, False, {}
-
-    def save_rgb_image(self, image):
-        pil_image = Image.fromarray(image)
-        
-        save_path = 'cam'
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-        
-        file_name = f"image.png"
-        file_path = os.path.join(save_path, file_name)
-        
-        pil_image.save(file_path) 
 
     def _process_image(self):
         while self.image_buffer.qsize() == 0:
