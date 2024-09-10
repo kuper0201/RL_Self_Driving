@@ -102,7 +102,7 @@ class CarlaLaneTrackingEnv(gymnasium.Env):
 
         # Respawn vehicle and sensors
         self.vehicle = self.world.spawn_actor(self.vehicle_bp, self.spawn_point)
-        self._setup_collision_sensor()
+        self._setup_sensors()
 
         self.spect()
         
