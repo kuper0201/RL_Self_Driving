@@ -28,7 +28,6 @@ This serves as a foundation for high-level autonomous driving, and through vario
 - PyTorch
 - Stable Baselines3
 - Gymnasium
-- Pillow
 - Carla(v0.9.15)
 - Carla Additional Maps(optional)
 
