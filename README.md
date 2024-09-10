@@ -1,7 +1,7 @@
 # Reinforcement Learning for Self-Driving with Carla
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=Python&logoColor=white) ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=PyTorch&logoColor=white)
 
-> A Reinforcement Learning project for self-driving cars
+> A Reinforcement Learning project for self-driving cars.
 
 ## About the Project
 
