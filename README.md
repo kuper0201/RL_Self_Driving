@@ -6,7 +6,7 @@
 ## About the Project
 
 A project to train a reinforcement learning model for lane-following driving.
-This serves as a foundation for high-level autonomous driving, and through various attempts, we expect to achieve a more advanced implementation of autonomous driving.
+This serves as a foundation for high-level autonomous driving, and through various attempts, I expect to achieve a more advanced implementation of autonomous driving.
 
 ## Preview
 
